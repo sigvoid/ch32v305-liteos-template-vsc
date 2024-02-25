@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/app.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "device": "CH32V305",
+            "svdFile": "./Misc/CH32V305xx.svd",
+            "showDevDebugOutput": "parsed",
+            "runToEntryPoint": "main",
+            "toolchainPrefix": "riscv-none-elf",
+            "configFiles": [
+                "./Misc/wch-riscv.cfg"
+            ]
+        }
+    ]
+}
