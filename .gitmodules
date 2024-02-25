@@ -1,0 +1,4 @@
+[submodule "LiteOS"]
+	path = LiteOS
+	url = https://gitee.com/openharmony/kernel_liteos_m.git
+	branch = OpenHarmony-v4.1-Beta1
