@@ -32,6 +32,8 @@ file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
     Peripheral/src/*.*
     User/*.*
 
+    LiteOS_hal/*.*
+
     LiteOS/kernel/src/*.c
     LiteOS/utils/*.c
     third_party/bounds_checking_function/src/*.c
@@ -50,6 +52,8 @@ target_include_directories(${PROJECT_NAME}.elf PUBLIC
     Core
     User
     Peripheral/inc
+
+    LiteOS_hal
 
     LiteOS/utils
     LiteOS/kernel/include
