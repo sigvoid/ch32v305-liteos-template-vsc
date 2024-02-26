@@ -31,6 +31,10 @@ file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
     Debug/*.*
     Peripheral/src/*.*
     User/*.*
+
+    LiteOS/kernel/src/*.c
+    LiteOS/utils/*.c
+    third_party/bounds_checking_function/src/*.c
 )
 
 message("src files:")
@@ -46,6 +50,11 @@ target_include_directories(${PROJECT_NAME}.elf PUBLIC
     Core
     User
     Peripheral/inc
+
+    LiteOS/utils
+    LiteOS/kernel/include
+    third_party/bounds_checking_function/include
+    third_party/cmsis/CMSIS/Core/Include
 )
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
