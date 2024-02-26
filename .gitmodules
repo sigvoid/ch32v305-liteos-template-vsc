@@ -2,3 +2,9 @@
 	path = LiteOS
 	url = https://gitee.com/openharmony/kernel_liteos_m.git
 	branch = OpenHarmony-v4.1-Beta1
+[submodule "third_party/bounds_checking_function"]
+	path = third_party/bounds_checking_function
+	url = https://gitee.com/openharmony/third_party_bounds_checking_function.git
+[submodule "third_party/cmsis"]
+	path = third_party/cmsis
+	url = https://gitee.com/openharmony/third_party_cmsis.git
