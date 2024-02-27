@@ -36,11 +36,10 @@
 #include "los_reg.h"
 #include "los_arch_interrupt.h"
 #include "los_arch_timer.h"
-#include "nuclei_sdk_hal.h"
+#include "ch32v30x.h"
 
 #define configKERNEL_INTERRUPT_PRIORITY         0
 
-#define SYSTICK_TICK_CONST  (SOC_TIMER_FREQ / LOSCFG_BASE_CORE_TICK_PER_SECOND)
 
 STATIC HWI_PROC_FUNC g_sysTickHandler = (HWI_PROC_FUNC)NULL;
 
@@ -54,7 +53,7 @@ STATIC VOID SysTickUnlock(VOID);
 
 STATIC ArchTickTimer g_archTickTimer = {
     .freq = 0,
-    .irqNum = SysTimer_IRQn,
+    .irqNum = SysTicK_IRQn,
     .periodMax = LOSCFG_BASE_CORE_TICK_RESPONSE_MAX,
     .init = SysTickStart,
     .getCycle = SysTickCycleGet,
@@ -69,36 +68,41 @@ STATIC UINT32 SysTickStart(HWI_PROC_FUNC handler)
     ArchTickTimer *tick = &g_archTickTimer;
     tick->freq = OS_SYS_CLOCK;
 
-    SysTick_Config(SYSTICK_TICK_CONST);
-    ECLIC_DisableIRQ(SysTimer_IRQn);
-    ECLIC_SetLevelIRQ(SysTimer_IRQn, configKERNEL_INTERRUPT_PRIORITY);
-    ECLIC_SetShvIRQ(SysTimer_IRQn, ECLIC_NON_VECTOR_INTERRUPT);
-    ECLIC_EnableIRQ(SysTimer_IRQn);
-
-    /* Set SWI interrupt level to lowest level/priority, SysTimerSW as Vector Interrupt */
-    ECLIC_SetShvIRQ(SysTimerSW_IRQn, ECLIC_VECTOR_INTERRUPT);
-    ECLIC_SetLevelIRQ(SysTimerSW_IRQn, configKERNEL_INTERRUPT_PRIORITY);
-    ECLIC_EnableIRQ(SysTimerSW_IRQn);
     g_intCount = 0;
 
+    NVIC_EnableIRQ(SysTicK_IRQn);
+    NVIC_EnableIRQ(Software_IRQn);
+    NVIC_SetPriority(SysTicK_IRQn,0xf0);
+    NVIC_SetPriority(Software_IRQn,0xf0);
     g_sysTickHandler = handler;
+
+    SysTick->SR=0;
+    SysTick->CMP=g_cyclesPerTick-1;
+    SysTick->CNT=0;
+    SysTick->CTLR=0xf;
 
     return LOS_OK; /* never return */
 }
 
-#define ArchTickSysTickHandler eclic_mtip_handler
+void SysTick_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+#define ArchTickSysTickHandler  SysTick_Handler
 
 void ArchTickSysTickHandler(void)
 {
     /* Do systick handler registered in HalTickStart. */
     if ((void *)g_sysTickHandler != NULL) {
-        g_sysTickHandler();
+        g_sysTickHandler(NULL);
     }
 }
 
 STATIC UINT64 SysTickReload(UINT64 nextResponseTime)
 {
-    SysTick_Reload(nextResponseTime);
+    SysTick->CTLR &= ~(1<<0);
+    SysTick->CMP  = nextResponseTime-1;
+    SysTick->CNT  = 0;
+    SysTick->SR  = 0;
+    NVIC_ClearPendingIRQ(SysTicK_IRQn);
+    SysTick->CTLR |= (1<<0);
     return nextResponseTime;
 }
 
@@ -106,20 +110,20 @@ STATIC UINT64 SysTickCycleGet(UINT32 *period)
 {
     UINT64 ticks;
     UINT32 intSave = LOS_IntLock();
-    ticks = SysTimer_GetLoadValue();
-    *period = (UINT32)ticks;
+    ticks = SysTick->CNT;
+    *period =SysTick->CMP;
     LOS_IntRestore(intSave);
     return ticks;
 }
 
 STATIC VOID SysTickLock(VOID)
 {
-    SysTimer_Stop();
+    SysTick->CTLR &= ~(1<<0);
 }
 
 STATIC VOID SysTickUnlock(VOID)
 {
-    SysTimer_Start();
+    SysTick->CTLR |= (1<<0);
 }
 
 ArchTickTimer *ArchSysTickTimerGet(VOID)

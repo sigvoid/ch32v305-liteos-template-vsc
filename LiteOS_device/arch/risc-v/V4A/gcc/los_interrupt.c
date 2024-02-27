@@ -36,7 +36,7 @@
 #include "los_arch_context.h"
 #include "los_task.h"
 #include "los_debug.h"
-#include "nuclei_sdk_hal.h"
+#include "ch32v30x.h"
 
 STATIC UINT32 HwiUnmask(HWI_HANDLE_T hwiNum)
 {
@@ -44,7 +44,7 @@ STATIC UINT32 HwiUnmask(HWI_HANDLE_T hwiNum)
         return OS_ERRNO_HWI_NUM_INVALID;
     }
 
-    ECLIC_EnableIRQ(hwiNum);
+    NVIC_EnableIRQ(hwiNum);
 
     return LOS_OK;
 }
@@ -55,7 +55,7 @@ STATIC UINT32 HwiMask(HWI_HANDLE_T hwiNum)
         return OS_ERRNO_HWI_NUM_INVALID;
     }
 
-    ECLIC_DisableIRQ(hwiNum);
+    NVIC_DisableIRQ(hwiNum);
 
     return LOS_OK;
 }
@@ -70,7 +70,7 @@ STATIC UINT32 HwiSetPriority(HWI_HANDLE_T hwiNum, UINT8 priority)
         return OS_ERRNO_HWI_PRIO_INVALID;
     }
 
-    ECLIC_SetPriorityIRQ(hwiNum, (hwiPrio & 0xffff));
+    NVIC_SetPriority(hwiNum, priority);
 
     return LOS_OK;
 }
@@ -103,30 +103,11 @@ UINT32 ArchHwiCreate(HWI_HANDLE_T hwiNum,
     if (hwiNum > SOC_INT_MAX) {
         return OS_ERRNO_HWI_NUM_INVALID;
     }
-    if (hwiMode > ECLIC_VECTOR_INTERRUPT) {
-        return OS_ERRNO_HWI_MODE_INVALID;
-    }
-    if ((irqParam == NULL) || (irqParam->pDevId > ECLIC_NEGTIVE_EDGE_TRIGGER)) {
+    if (irqParam == NULL) {
         return OS_ERRNO_HWI_ARG_INVALID;
     }
-
-    /* set interrupt vector hwiMode */
-    ECLIC_SetShvIRQ(hwiNum, hwiMode);
-    /* set interrupt trigger hwiMode and polarity */
-    ECLIC_SetTrigIRQ(hwiNum, irqParam->pDevId);
-    /* set interrupt level */
-    // default to 0
-    ECLIC_SetLevelIRQ(hwiNum, 0);
     /* set interrupt priority */
-    // high 16 bit for level
-    ECLIC_SetLevelIRQ(hwiNum, (hwiPrio >> 16));
-    /* set interrupt priority */
-    // low 16 bit for priority
-    ECLIC_SetPriorityIRQ(hwiNum, (hwiPrio & 0xffff));
-    if (hwiHandler != NULL) {
-        /* set interrupt handler entry to vector table */
-        ECLIC_SetVector(hwiNum, (rv_csr_t)hwiHandler);
-    }
+    HwiSetPriority(hwiNum, (UINT8)hwiPrio);
     /* enable interrupt */
     HwiUnmask(hwiNum);
     return LOS_OK;
@@ -143,7 +124,7 @@ LITE_OS_SEC_TEXT UINT32 ArchHwiDelete(HWI_HANDLE_T hwiNum, HwiIrqParam *irqParam
 {
     (VOID)irqParam;
     // change func to default func
-    ECLIC_SetVector(hwiNum, (rv_csr_t)HalHwiDefaultHandler);
+    // ECLIC_SetVector(hwiNum, (rv_csr_t)HalHwiDefaultHandler);
     // disable interrupt
     HwiMask(hwiNum);
     return LOS_OK;

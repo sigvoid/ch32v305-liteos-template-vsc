@@ -34,18 +34,35 @@
 #define _LOS_ARCH_INTERRUPT_H
 
 #include "los_common_interrupt.h"
-#include "nuclei_sdk_soc.h"
+#include "ch32v30x.h"
 
 #ifdef __cplusplus
 #if __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 #endif /* __cplusplus */
+
+/* *
+ * @ingroup los_arch_interrupt
+ * Highest priority of a hardware interrupt.
+ */
+#ifndef OS_HWI_PRIO_HIGHEST
+#define OS_HWI_PRIO_HIGHEST                   0
+#endif
+
+/* *
+ * @ingroup los_arch_interrupt
+ * Lowest priority of a hardware interrupt.
+ */
+#ifndef OS_HWI_PRIO_LOWEST
+#define OS_HWI_PRIO_LOWEST                    7
+#endif
+
 /**
  * @ingroup los_hwi
  * Count of Nuclei system interrupt vector.
  */
-#define OS_RISCV_SYS_VECTOR_CNT   19
+#define OS_RISCV_SYS_VECTOR_CNT   16
 
 /**
  * @ingroup los_hwi
@@ -64,7 +81,14 @@ extern "C" {
  */
 #define OS_HWI_MAX_NUM        (OS_RISCV_VECTOR_CNT-1)
 
+extern VOID HalHwiInit(VOID);
+
+#if (LOSCFG_PLATFORM_HWI_WITH_ARG == 1)
+extern VOID HalHwiDefaultHandler(VOID *arg);
+#else
 extern VOID HalHwiDefaultHandler(VOID);
+#endif
+
 
 /**
  * @ingroup los_hwi
@@ -203,6 +227,12 @@ extern VOID HalHwiDefaultHandler(VOID);
 extern UINT32 HalUnalignedAccessFix(UINTPTR mcause, UINTPTR mepc, UINTPTR mtval, VOID *sp);
 
 extern VOID DisplayTaskInfo(VOID);
+
+extern void HalIntEnter(void);
+
+extern void HalIntExit(void);
+
+extern VOID HalDisplayTaskInfo(VOID);
 
 #ifdef __cplusplus
 #if __cplusplus

@@ -38,14 +38,14 @@
 
 #define portCONTEXT_SIZE    ( portRegNum * REGBYTES )
 
-    .section .text
-    .align 4
+    .section .text,"ax",@progbits
+    .align 2
 
     .type ArchIntLock, %function
     .global ArchIntLock
 ArchIntLock:
     csrr    a0, mstatus           // return value
-    li      t0, MSTATUS_MIE   // mie
+    li      t0, (MSTATUS_MIE|MSTATUS_MPIE)   // mie
     csrrc   zero, mstatus, t0
     ret
 
@@ -53,7 +53,7 @@ ArchIntLock:
     .global ArchIntUnLock
 ArchIntUnLock:
     csrr    a0, mstatus           // return value
-    li      t0, MSTATUS_MIE   // mie
+    li      t0, (MSTATUS_MIE|MSTATUS_MPIE)   // mie
     csrrs   zero, mstatus, t0
     ret
 
@@ -70,14 +70,15 @@ ArchIntRestore:
     for lazy saving of FPU registers. */
     .type HalStartToRun, %function
     .global HalStartToRun
-    .align 3
+    .align 2
 HalStartToRun:
     /* Setup Interrupt Stack using
        The stack that was used by main()
        before the scheduler is started is
        no longer required after the scheduler is started.
        Interrupt stack pointer is stored in CSR_MSCRATCH */
-    la t0, _sp
+    la t0, _eusrstack
+    addi t0,t0,-512
     csrw CSR_MSCRATCH, t0
     /* get stack pointer */
     la t0, g_losTask
@@ -129,9 +130,10 @@ HalStartToRun:
     mret
 
 .extern HalTaskSwitch
+.section .text.vector_handler, "ax", @progbits
+.global SW_Handler
 .align 2
-.global eclic_msip_handler
-eclic_msip_handler:
+SW_Handler:
     addi sp, sp, -portCONTEXT_SIZE
     STORE x1,  1  * REGBYTES(sp)    /* RA */
     STORE x5,  2  * REGBYTES(sp)
@@ -163,6 +165,10 @@ eclic_msip_handler:
     STORE x30, 27 * REGBYTES(sp)
     STORE x31, 28 * REGBYTES(sp)
 #endif
+
+    li   t0,    0x20
+	csrs 0x804, t0
+
     /* Push mstatus to stack */
     csrr t0, CSR_MSTATUS
     STORE t0,  (portRegNum - 1)  * REGBYTES(sp)

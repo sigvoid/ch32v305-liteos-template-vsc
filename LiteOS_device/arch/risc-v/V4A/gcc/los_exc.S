@@ -33,7 +33,7 @@
 
 #include "riscv_encoding.h"
 
-.section    .text.entry
+.section    .text
 .align 8
 
 /**
@@ -57,7 +57,7 @@
 */
 /* Save caller registers */
 .macro SAVE_CONTEXT
-    csrrw sp, CSR_MSCRATCHCSWL, sp
+    csrrw sp, CSR_MSCRATCH, sp
     /* Allocate stack space for context saving */
 #ifndef __riscv_32e
     addi sp, sp, -20*REGBYTES
@@ -121,76 +121,8 @@
     /* De-allocate the stack space */
     addi sp, sp, 14*REGBYTES
 #endif /* __riscv_32e */
-    csrrw sp, CSR_MSCRATCHCSWL, sp
+    csrrw sp, CSR_MSCRATCH, sp
 .endm
-
-/**
- * \brief  Macro for save necessary CSRs to stack
- * \details
- * This macro store MCAUSE, MEPC, MSUBM to stack.
- */
-.macro SAVE_CSR_CONTEXT
-    /* Store CSR mcause to stack using pushmcause */
-    csrrwi  x0, CSR_PUSHMCAUSE, 11
-    /* Store CSR mepc to stack using pushmepc */
-    csrrwi  x0, CSR_PUSHMEPC, 12
-    /* Store CSR msub to stack using pushmsub */
-    csrrwi  x0, CSR_PUSHMSUBM, 13
-.endm
-
-/**
- * \brief  Macro for restore necessary CSRs from stack
- * \details
- * This macro restore MSUBM, MEPC, MCAUSE from stack.
- */
-.macro RESTORE_CSR_CONTEXT
-    LOAD x5,  13*REGBYTES(sp)
-    csrw CSR_MSUBM, x5
-    LOAD x5,  12*REGBYTES(sp)
-    csrw CSR_MEPC, x5
-    LOAD x5,  11*REGBYTES(sp)
-    csrw CSR_MCAUSE, x5
-.endm
-
-/**
- * \brief  Exception/NMI Entry
- * \details
- * This function provide common entry functions for exception/nmi.
- * \remarks
- * This function provide a default exception/nmi entry.
- * ABI defined caller save register and some CSR registers
- * to be saved before enter interrupt handler and be restored before return.
- */
-.section .text.trap
-/* In CLIC mode, the exeception entry must be 64bytes aligned */
-.align 6
-.global exc_entry
-exc_entry:
-    /* Save the caller saving registers (context) */
-    SAVE_CONTEXT
-    /* Save the necessary CSR registers */
-    SAVE_CSR_CONTEXT
-
-    /*
-     * Set the exception handler function arguments
-     * argument 1: mcause value
-     * argument 2: current stack point(SP) value
-     */
-    csrr a0, mcause
-    mv a1, sp
-    /*
-     * By default, the function template is provided in
-     * system_Device.c, you can adjust it as you want
-     */
-    call core_exception_handler
-
-    /* Restore the necessary CSR registers */
-    RESTORE_CSR_CONTEXT
-    /* Restore the caller saving registers (context) */
-    RESTORE_CONTEXT
-
-    /* Return to regular code */
-    mret
 
 /**
  * \brief  Non-Vector Interrupt Entry
@@ -202,7 +134,7 @@ exc_entry:
  * ABI defined caller save register and some CSR registers need
  * to be saved before enter interrupt handler and be restored before return.
  */
-.section      .text.irq
+.section      .text.vector_handler
 /* In CLIC mode, the interrupt entry must be 4bytes aligned */
 .align 2
 .extern g_intCount
@@ -211,8 +143,6 @@ exc_entry:
 irq_entry:
     /* Save the caller saving registers (context) */
     SAVE_CONTEXT
-    /* Save the necessary CSR registers */
-    SAVE_CSR_CONTEXT
 
     /* This special CSR read/write operation, which is actually
      * claim the CLIC to find its pending highest ID, if the ID
@@ -224,8 +154,6 @@ irq_entry:
     add t1, t1, 0x1
     sw t1, 0(t0)
 
-    csrrw ra, CSR_JALMNXTI, ra
-
     /* Critical section with interrupts disabled */
     DISABLE_MIE
 
@@ -235,8 +163,6 @@ irq_entry:
     sub t1, t1, t2
     sw t1, 0(t0)
 
-    /* Restore the necessary CSR registers */
-    RESTORE_CSR_CONTEXT
     /* Restore the caller saving registers (context) */
     RESTORE_CONTEXT
 

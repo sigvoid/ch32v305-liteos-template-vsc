@@ -7,7 +7,7 @@ SET(COMMON_FLAGS
     "${CPU_FLAGS} -msmall-data-limit=8 -msave-restore \
     -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections \
     -fno-common -nostartfiles --specs=nano.specs --specs=nosys.specs \
-    -Wall -Wextra -Wno-missing-field-initializers -Wno-comment\
+    -Wall -Wextra -Wno-missing-field-initializers -Wno-comment -Wno-cast-function-type \
     -Werror=return-type -Werror=return-local-addr -Werror=uninitialized"
 )
 
@@ -32,10 +32,14 @@ file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
     Peripheral/src/*.*
     User/*.*
 
-    LiteOS_hal/*.*
+    LiteOS_device/arch/risc-v/V4A/gcc/*.*
+    LiteOS_device/config/*.*
+
+    LiteOS/arch/risc-v/common/*.c
 
     LiteOS/kernel/src/*.c
     LiteOS/utils/*.c
+    LiteOS/kal/cmsis/*.c
     third_party/bounds_checking_function/src/*.c
 )
 
@@ -53,7 +57,12 @@ target_include_directories(${PROJECT_NAME}.elf PUBLIC
     User
     Peripheral/inc
 
-    LiteOS_hal
+    LiteOS_device/arch/risc-v/V4A/gcc
+    LiteOS_device/config
+
+    LiteOS/arch/risc-v/riscv32/gcc/asm
+    LiteOS/arch/risc-v/common
+    LiteOS/arch/include
 
     LiteOS/utils
     LiteOS/kernel/include

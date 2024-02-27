@@ -24,9 +24,9 @@
 #include "los_sched.h"
 #include "los_interrupt.h"
 #include "los_debug.h"
-#include "nuclei_sdk_soc.h"
+#include "ch32v30x.h"
 
-#define INITIAL_MSTATUS                 ( MSTATUS_MPP | MSTATUS_MPIE | MSTATUS_FS_INITIAL)
+#define INITIAL_MSTATUS                 0x7880  //( MSTATUS_MPP | MSTATUS_MPIE | MSTATUS_FS_INITIAL)
 #define ALIGN_DOWN(size, align)         ((size) & ~((align) - 1))
 
 LITE_OS_SEC_TEXT_INIT VOID ArchInit(VOID)
@@ -74,12 +74,12 @@ LITE_OS_SEC_TEXT_INIT UINT32 ArchStartSchedule(VOID)
 
 VOID ArchTaskSchedule(VOID)
 {
-    SysTimer_SetSWIRQ();
+    NVIC_SetPendingIRQ(Software_IRQn);
 }
 
 VOID HalTaskSwitch(VOID)
 {
-    SysTimer_ClearSWIRQ();
+    NVIC_ClearPendingIRQ(Software_IRQn);
     OsSchedTaskSwitch();
     /* Set newTask to runTask */
     g_losTask.runTask = g_losTask.newTask;

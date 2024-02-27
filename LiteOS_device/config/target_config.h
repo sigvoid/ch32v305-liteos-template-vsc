@@ -37,6 +37,8 @@
 #ifndef _TARGET_CONFIG_H
 #define _TARGET_CONFIG_H
 
+#include "soc.h"
+
 #ifdef __cplusplus
 #if __cplusplus
 extern "C" {
@@ -58,6 +60,7 @@ extern uint32_t SystemCoreClock;
 #define LOSCFG_PLATFORM_HWI                                 0
 #define LOSCFG_USE_SYSTEM_DEFINED_INTERRUPT                 0
 #define LOSCFG_PLATFORM_HWI_LIMIT                           32
+#define LOSCFG_PLATFORM_HWI_WITH_ARG                        1
 /*=============================================================================
                                        Task module configuration
 =============================================================================*/
@@ -111,6 +114,7 @@ extern uint32_t SystemCoreClock;
                                        enable backtrace
 ============================================================================= */
 #define LOSCFG_BACKTRACE_TYPE                               0
+#define LOSCFG_BACKTRACE_DEPTH                              15
 
 #ifdef __cplusplus
 #if __cplusplus
